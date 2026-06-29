@@ -536,3 +536,202 @@ Recommended implementation:
 * Query database only when cache miss happens
 
 This minimizes database load and improves overall user experience when concurrent users increase.
+
+
+
+
+
+
+# Stage 5
+
+# Problems In Current Implementation
+
+Current flow
+
+text
+send_email()
+save_to_db()
+push_to_app()
+
+
+Problems
+
+* Processing 50,000 students one by one creates very high execution time
+* If email fails in between, delivery becomes inconsistent
+* Entire process depends on sequential execution
+* No retry system for failed notifications
+* API request stays active until all notifications finish
+* Failure in one step affects complete flow
+
+
+
+# Better Design
+
+Instead of processing directly, the request should create background jobs and process them asynchronously.
+
+Flow
+
+text
+HR Click Notify All
+        ↓
+Create Batch Jobs
+        ↓
+Queue System
+        ↓
+Multiple Workers Process In Parallel
+
+
+Students should be divided into batches.
+
+Example
+
+text
+50,000 Students
+
+500 Batches
+
+100 Students Per Batch
+
+
+This avoids overloading one worker.
+
+# Processing Strategy
+
+All operations should run independently.
+
+Flow
+
+text
+Save Notification → Email Queue → App Notification Queue
+
+Separate workers
+
+text
+DB Worker → Save Notification
+
+Email Worker → Send Email
+
+Push Worker → Send App Notification
+
+
+If one service fails, others continue normally.
+
+
+
+# If Email Fails For 200 Students
+
+Each notification should have delivery status.
+
+Status
+
+text
+PENDING
+SENT
+FAILED
+RETRYING
+
+
+Retry logic
+
+text
+Retry 3 times
+
+If still fails → move to FAILED
+
+
+Failed emails stay in queue until retry completes.
+
+No manual reprocessing required.
+
+
+
+# Duplicate Prevention
+
+If system retries same job multiple times, duplicate notifications should not be created.
+
+Use unique notification ID.
+
+Example
+
+text
+notification_id = student_id + timestamp
+
+Before processing, check whether notification already exists.
+
+This prevents duplicate email or duplicate database records.
+
+
+
+# Revised Pseudocode
+
+text
+function notify_all(student_ids, message):
+
+    batches = split(student_ids, 100)
+
+    for batch in batches:
+        main_queue.push(batch)
+
+
+
+worker process_batch(batch):
+
+    for student_id in batch:
+
+        db_queue.push(student_id, message)
+
+        email_queue.push(student_id, message)
+
+        app_queue.push(student_id, message)
+
+
+
+worker database_worker():
+
+    if notification_not_exists():
+
+        save_to_db(student_id, message)
+
+
+
+worker email_worker():
+
+    try:
+        send_email(student_id, message)
+
+    except error:
+
+        retry_email(student_id, 3)
+
+        mark_status("FAILED")
+
+
+
+worker app_worker():
+
+    push_to_app(student_id, message)
+
+
+## Final Architecture
+
+text
+HR Request
+      ↓
+Batch Queue
+      ↓
+----------------------------------------
+|                  |                   |
+DB Queue       Email Queue        App Queue
+|                  |                   |
+DB Worker      Email Worker       Push Worker
+
+
+# Improvements
+
+* Batch processing for large scale requests
+* Parallel workers reduce execution time
+* Retry mechanism handles failures automatically
+* Separate queues prevent service dependency
+* Duplicate notification prevention using unique ID
+* Email failure does not affect database or app notification
+* API returns immediately without waiting for 50,000 requests
