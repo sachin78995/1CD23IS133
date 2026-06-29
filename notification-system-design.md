@@ -735,3 +735,47 @@ DB Worker      Email Worker       Push Worker
 * Duplicate notification prevention using unique ID
 * Email failure does not affect database or app notification
 * API returns immediately without waiting for 50,000 requests
+
+
+
+
+# Stage 6
+
+# Priority Inbox Design
+
+Priority inbox shows top 10 unread notifications based on priority and recency.
+
+Priority order
+
+
+Placement > Result > Event
+
+
+Approach used
+
+* Assign weight for each notification type
+* Calculate priority score using weight + timestamp
+* Use Min Heap to maintain top 10 notifications
+* New notifications inserted without sorting complete list
+
+Formula
+
+text
+Priority Score = Weight + Recency
+
+Data Structure
+
+text
+Min Heap
+
+Time Complexity
+
+text
+Insertion → O(log n)
+
+Top 10 retrieval → O(1)
+
+
+Reason for using Heap
+
+As new notifications keep arriving, heap updates efficiently without sorting entire list repeatedly.
