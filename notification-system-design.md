@@ -267,6 +267,10 @@ The system is designed keeping these points in mind:
 
 The proposed design exposes a clean API contract for frontend integration while also supporting real-time notification delivery. REST APIs handle standard operations and WebSocket communication handles instant notification updates for active users.
 
+
+
+
+
 # Stage 2
 
 # SQL Queries Based on API Design
@@ -355,6 +359,8 @@ sql id="rfxu58"
 DELETE FROM notifications
 
 WHERE created_at < NOW() - INTERVAL '90 days';
+
+
 
 
 
@@ -451,3 +457,82 @@ AND createdAt >= NOW() - INTERVAL '7 days';
 * Use pagination
 * Archive old records
 * Move old notifications to separate table
+
+
+
+
+# Stage 4
+
+# Problem
+
+Notifications are currently fetched from the database every time a student loads a page.
+
+This causes:
+
+* Too many repeated database requests
+* Increased database load
+* Slow API response time
+* Poor user experience when traffic increases
+
+
+# Proposed Solution
+
+Instead of fetching notifications from database on every page load, I would use a caching layer with real time notification delivery.
+
+Architecture
+
+text id="e47k86"
+User Request → Cache → Database
+
+New Notification → WebSocket → User
+
+Working:
+
+* Recently accessed notifications are stored in cache
+* System checks cache first before querying database
+* Database is accessed only if cache data is unavailable
+* New notifications are pushed instantly using WebSocket instead of repeated API calls
+
+# Performance Improvement
+
+Cache reduces unnecessary repeated database reads.
+
+Instead of:
+
+text id="qrlfva"
+1000 users → 1000 database queries
+
+It becomes:
+
+text id="p6d4fa"
+1000 users → cache access
+
+Database queried only when needed
+
+
+This reduces database traffic significantly.
+
+# Tradeoffs
+
+Advantages:
+
+* Faster response time
+* Reduced database load
+* Better scalability under high traffic
+* Instant notification delivery
+
+Challenges:
+
+* Cache data can become outdated
+* Cache synchronization is required when new notification arrives
+* WebSocket connections increase server management complexity
+
+# Final Approach
+
+Recommended implementation:
+
+* Store recent notifications in Redis cache
+* Use WebSocket for real time delivery
+* Query database only when cache miss happens
+
+This minimizes database load and improves overall user experience when concurrent users increase.
