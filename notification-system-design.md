@@ -267,7 +267,7 @@ The system is designed keeping these points in mind:
 
 The proposed design exposes a clean API contract for frontend integration while also supporting real-time notification delivery. REST APIs handle standard operations and WebSocket communication handles instant notification updates for active users.
 
-# Stage 1
+# Stage 2
 
 # SQL Queries Based on API Design
 
