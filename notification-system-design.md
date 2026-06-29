@@ -356,3 +356,98 @@ DELETE FROM notifications
 
 WHERE created_at < NOW() - INTERVAL '90 days';
 
+
+
+
+
+# Stage 3
+
+# Query Given
+sql
+SELECT * FROM notifications
+WHERE studentID = 1042 AND isRead = false
+ORDER BY createdAt ASC;
+
+
+Query is correct.
+
+
+# Problems
+
+* Large table size (5,000,000 records)
+* Full table scan if index is missing
+* SELECT * fetches unnecessary data
+* Sorting increases execution time
+
+
+# Improved Query
+
+sql
+SELECT notification_id, title, message, createdAt
+
+FROM notifications
+
+WHERE studentID = 1042
+AND isRead = false
+
+ORDER BY createdAt ASC;
+
+
+# Index Required
+
+sql
+CREATE INDEX idx_student_notification
+
+ON notifications(studentID, isRead, createdAt);
+
+
+# Computation Cost
+
+Without Index
+
+text
+O(n)
+
+
+With Index
+
+text
+O(log n)
+
+# Adding Index On Every Column
+
+Not recommended.
+
+Problems:
+
+* Slower INSERT
+* Slower UPDATE
+* More storage usage
+* Unnecessary indexes
+
+Create indexes only on:
+
+* WHERE columns
+* ORDER BY columns
+* Frequently searched columns
+
+
+# Students Who Got Placement Notification In Last 7 Days
+
+sql
+SELECT DISTINCT studentID
+
+FROM notifications
+
+WHERE notificationType = 'Placement'
+
+AND createdAt >= NOW() - INTERVAL '7 days';
+
+
+# Better Optimization
+
+* Composite indexing
+* Avoid SELECT *
+* Use pagination
+* Archive old records
+* Move old notifications to separate table
