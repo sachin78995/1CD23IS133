@@ -266,3 +266,93 @@ The system is designed keeping these points in mind:
 ## Summary
 
 The proposed design exposes a clean API contract for frontend integration while also supporting real-time notification delivery. REST APIs handle standard operations and WebSocket communication handles instant notification updates for active users.
+
+# Stage 1
+
+# SQL Queries Based on API Design
+
+# 1. Create Notification
+
+sql id="c1gj8m"
+INSERT INTO notifications
+(notification_id, user_id, title, message, category, is_read, created_at)
+
+VALUES
+('NT001', 'U102', 'Payment Received',
+'Payment completed successfully',
+'transaction', FALSE, CURRENT_TIMESTAMP);
+
+
+### 2. Fetch All Notifications
+
+sql id="5ngf0g"
+SELECT *
+
+FROM notifications
+
+WHERE user_id = 'U102'
+
+ORDER BY created_at DESC;
+
+
+### 3. Fetch Unread Notifications
+
+sql id="53v93q"
+SELECT *
+
+FROM notifications
+
+WHERE user_id = 'U102'
+AND is_read = FALSE
+
+ORDER BY created_at DESC;
+
+
+### 4. Mark Notification as Read
+
+sql id="98a5ue"
+UPDATE notifications
+
+SET is_read = TRUE
+
+WHERE notification_id = 'NT001';
+
+
+### 5. Delete Notification
+sql id="o6y3ri"
+DELETE FROM notifications
+
+WHERE notification_id = 'NT001';
+
+
+### 6. Get Unread Count
+
+sql id="p9jcy9"
+SELECT COUNT(*)
+
+FROM notifications
+
+WHERE user_id = 'U102'
+AND is_read = FALSE;
+
+
+### 7. Fetch Latest Notifications
+sql id="9jpl7r"
+SELECT *
+
+FROM notifications
+
+WHERE user_id = 'U102'
+
+ORDER BY created_at DESC
+
+LIMIT 10;
+
+
+### 8. Delete Old Notifications
+
+sql id="rfxu58"
+DELETE FROM notifications
+
+WHERE created_at < NOW() - INTERVAL '90 days';
+
